@@ -3,7 +3,14 @@
     "claude-opus-4-7":     { "tier": "opus",   "input": 15.00, "output": 75.00, "cache_read": 1.50, "cache_create_5m": 18.75, "cache_create_1h": 30.00 },
     "claude-opus-4-6":     { "tier": "opus",   "input": 15.00, "output": 75.00, "cache_read": 1.50, "cache_create_5m": 18.75, "cache_create_1h": 30.00 },
     "claude-sonnet-4-6":   { "tier": "sonnet", "input":  3.00, "output": 15.00, "cache_read": 0.30, "cache_create_5m":  3.75, "cache_create_1h":  6.00 },
-    "claude-haiku-4-5":    { "tier": "haiku",  "input":  1.00, "output":  5.00, "cache_read": 0.10, "cache_create_5m":  1.25, "cache_create_1h":  2.00 }
+    "claude-haiku-4-5":    { "tier": "haiku",  "input":  1.00, "output":  5.00, "cache_read": 0.10, "cache_create_5m":  1.25, "cache_create_1h":  2.00 },
+    "o3":                  { "tier": "o3",          "input":  2.00, "output":  8.00, "cache_read": 0.50,  "cache_create_5m": 0, "cache_create_1h": 0 },
+    "o3-mini":             { "tier": "o3-mini",     "input":  1.10, "output":  4.40, "cache_read": 0.275, "cache_create_5m": 0, "cache_create_1h": 0 },
+    "o4-mini":             { "tier": "o4-mini",     "input":  1.10, "output":  4.40, "cache_read": 0.275, "cache_create_5m": 0, "cache_create_1h": 0 },
+    "gpt-5":               { "tier": "gpt-5",       "input":  1.25, "output": 10.00, "cache_read": 0.625, "cache_create_5m": 0, "cache_create_1h": 0 },
+    "gpt-5.3-codex":       { "tier": "gpt-5-codex", "input":  1.75, "output": 14.00, "cache_read": 0.875, "cache_create_5m": 0, "cache_create_1h": 0 },
+    "gpt-5.4":             { "tier": "gpt-5.4",     "input":  2.50, "output": 15.00, "cache_read": 0.25,  "cache_create_5m": 0, "cache_create_1h": 0 },
+    "gpt-5.5":             { "tier": "gpt-5.5",     "input":  5.00, "output": 30.00, "cache_read": 0.50,  "cache_create_5m": 0, "cache_create_1h": 0 }
   },
   "tier_fallback": {
     "opus":   { "input": 15.00, "output": 75.00, "cache_read": 1.50, "cache_create_5m": 18.75, "cache_create_1h": 30.00 },
@@ -15,5 +22,10 @@
     "pro":     { "monthly": 20,  "label": "Pro" },
     "max":     { "monthly": 100, "label": "Max" },
     "max-20x": { "monthly": 200, "label": "Max 20x" }
+  },
+  "codex_plans": {
+    "api":  { "monthly": 0,  "label": "API (pay-per-token)" },
+    "plus": { "monthly": 20, "label": "ChatGPT Plus" },
+    "pro":  { "monthly": 200, "label": "ChatGPT Pro" }
   }
 }

@@ -2,18 +2,28 @@ import { api, state, $ } from '/web/app.js';
 
 export default async function (root) {
   const cur = await api('/api/plan');
-  const plans = Object.entries(cur.pricing.plans);
+  const claudePlans  = Object.entries(cur.pricing.plans        || {});
+  const codexPlans   = Object.entries(cur.pricing.codex_plans  || {});
+  const _opts = (entries, selected) => entries.map(([k,v]) =>
+    `<option value="${k}" ${k===selected?'selected':''}>${v.label}${v.monthly?` — $${v.monthly}/mo`:''}</option>`
+  ).join('');
   root.innerHTML = `
     <div class="card">
       <h2>Settings</h2>
-      <h3 style="margin-top:16px">Plan</h3>
-      <p class="muted" style="margin:0 0 12px">Sets how cost is displayed. API mode shows pay-per-token rates. Subscription modes show what you actually pay each month.</p>
+      <h3 style="margin-top:16px">Claude Code Plan</h3>
+      <p class="muted" style="margin:0 0 12px">Sets how Claude token costs are displayed.</p>
       <div class="flex">
-        <select id="plan">
-          ${plans.map(([k,v]) => `<option value="${k}" ${k===cur.plan?'selected':''}>${v.label}${v.monthly?` — $${v.monthly}/mo`:''}</option>`).join('')}
-        </select>
-        <button class="primary" id="save">Save</button>
-        <span id="msg" class="muted"></span>
+        <select id="plan">${_opts(claudePlans, cur.plan)}</select>
+        <button class="primary" id="save-claude">Save</button>
+        <span id="msg-claude" class="muted"></span>
+      </div>
+
+      <h3 style="margin-top:20px">Codex Plan</h3>
+      <p class="muted" style="margin:0 0 12px">Sets how Codex token costs are displayed.</p>
+      <div class="flex">
+        <select id="codex-plan">${_opts(codexPlans, cur.codex_plan)}</select>
+        <button class="primary" id="save-codex">Save</button>
+        <span id="msg-codex" class="muted"></span>
       </div>
 
       <hr class="divider">
@@ -41,12 +51,13 @@ export default async function (root) {
       <p class="muted">Press <code>Cmd/Ctrl + B</code> anywhere to blur prompt text and other sensitive content for screenshots.</p>
     </div>`;
 
-  $('#save').addEventListener('click', async () => {
-    const plan = $('#plan').value;
-    await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
-    state.plan = plan;
-    document.getElementById('plan-pill').textContent = plan;
-    $('#msg').textContent = 'Saved.';
-    $('#msg').style.color = 'var(--good)';
-  });
+  const _save = async (selectId, msgId, source) => {
+    const plan = $(selectId).value;
+    await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, source }) });
+    if (source === 'claude') { state.plan = plan; document.getElementById('plan-pill').textContent = plan; }
+    $(msgId).textContent = 'Saved.';
+    $(msgId).style.color = 'var(--good)';
+  };
+  $('#save-claude').addEventListener('click', () => _save('#plan', '#msg-claude', 'claude'));
+  $('#save-codex').addEventListener('click',  () => _save('#codex-plan', '#msg-codex', 'codex'));
 }

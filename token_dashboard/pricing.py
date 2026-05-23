@@ -41,20 +41,23 @@ def cost_for(model: str, usage: dict, pricing: dict) -> dict:
     return {"usd": round(sum(bd.values()), 6), "estimated": estimated, "breakdown": bd}
 
 
-def get_plan(db_path: Union[str, Path], default: str = "api") -> str:
+def get_plan(db_path: Union[str, Path], source: str = "claude", default: str = "api") -> str:
+    key = "plan" if source == "claude" else f"plan_{source}"
     with connect(db_path) as c:
-        row = c.execute("SELECT v FROM plan WHERE k='plan'").fetchone()
+        row = c.execute("SELECT v FROM plan WHERE k=?", (key,)).fetchone()
     return row["v"] if row else default
 
 
-def set_plan(db_path: Union[str, Path], plan: str) -> None:
+def set_plan(db_path: Union[str, Path], plan: str, source: str = "claude") -> None:
+    key = "plan" if source == "claude" else f"plan_{source}"
     with connect(db_path) as c:
-        c.execute("INSERT OR REPLACE INTO plan (k, v) VALUES ('plan', ?)", (plan,))
+        c.execute("INSERT OR REPLACE INTO plan (k, v) VALUES (?, ?)", (key, plan))
         c.commit()
 
 
-def format_for_user(api_cost_usd: float, plan: str, pricing: dict) -> dict:
-    p = pricing["plans"].get(plan, pricing["plans"]["api"])
+def format_for_user(api_cost_usd: float, plan: str, pricing: dict, source: str = "claude") -> dict:
+    plan_table = pricing["codex_plans"] if source == "codex" else pricing["plans"]
+    p = plan_table.get(plan, plan_table["api"])
     if plan == "api" or p["monthly"] == 0:
         return {"display_usd": api_cost_usd, "subtitle": None, "subscription_usd": None}
     return {

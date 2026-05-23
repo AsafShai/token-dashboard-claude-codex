@@ -23,13 +23,23 @@ export const fmt = {
   ts: t => (t || '').slice(0, 16).replace('T', ' '),
 };
 
+const SOURCE_PASSTHROUGH = new Set(['/api/plan', '/api/stream', '/api/scan', '/api/tips', '/api/tips/dismiss']);
+
 export async function api(path, opts) {
-  const r = await fetch(path, opts);
+  let url = path;
+  if (!opts?.method || opts.method === 'GET') {
+    const base = path.split('?')[0];
+    if (!SOURCE_PASSTHROUGH.has(base) && state.source && state.source !== 'all') {
+      const sep = path.includes('?') ? '&' : '?';
+      url = path + sep + 'source=' + encodeURIComponent(state.source);
+    }
+  }
+  const r = await fetch(url, opts);
   if (!r.ok) throw new Error(`${path} → ${r.status}`);
   return r.json();
 }
 
-export const state = { plan: 'api', pricing: null };
+export const state = { plan: 'api', pricing: null, source: 'all' };
 
 const ROUTES = {
   '/overview': () => import('/web/routes/overview.js'),
@@ -50,10 +60,23 @@ function buildTopbar() {
       ${Object.keys(ROUTES).map(p => `<a href="#${p}" data-route="${p}">${p.slice(1)}</a>`).join('')}
     </nav>
     <div class="spacer"></div>
+    <div class="source-filter" id="source-filter">
+      <button class="src-btn active" data-src="all">All</button>
+      <button class="src-btn" data-src="claude">Claude</button>
+      <button class="src-btn" data-src="codex">Codex</button>
+    </div>
     <span class="pill" id="plan-pill">api</span>
     <span class="pill muted" title="Cmd/Ctrl+B blurs sensitive text">⌘B blur</span>
   `;
   document.body.prepend(wrap);
+
+  wrap.addEventListener('click', e => {
+    const btn = e.target.closest('.src-btn');
+    if (!btn) return;
+    state.source = btn.dataset.src;
+    $$('.src-btn', wrap).forEach(b => b.classList.toggle('active', b === btn));
+    render();
+  });
 }
 
 function setActiveTab(routeKey) {

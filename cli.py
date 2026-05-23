@@ -9,6 +9,7 @@ from pathlib import Path
 
 from token_dashboard.db import init_db, default_db_path, overview_totals
 from token_dashboard.scanner import scan_dir
+from token_dashboard.codex_scanner import scan_dir as codex_scan_dir
 from token_dashboard.tips import all_tips
 
 
@@ -24,6 +25,14 @@ def _projects(args) -> str:
     )
 
 
+def _codex_dir(args) -> str:
+    return (
+        args.codex_dir
+        or os.environ.get("CODEX_SESSIONS_DIR")
+        or str(Path.home() / ".codex" / "sessions")
+    )
+
+
 def _today_range():
     now = datetime.now(timezone.utc)
     start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc).isoformat()
@@ -35,7 +44,11 @@ def cmd_scan(args):
     db = _db_path(args)
     init_db(db)
     n = scan_dir(_projects(args), db)
-    print(f"Token Dashboard: scanned {n['files']} files, {n['messages']} messages, {n['tools']} tool calls")
+    nc = codex_scan_dir(_codex_dir(args), db)
+    files = n["files"] + nc["files"]
+    msgs  = n["messages"] + nc["messages"]
+    tools = n["tools"] + nc["tools"]
+    print(f"Token Dashboard: scanned {files} files, {msgs} messages, {tools} tool calls")
 
 
 def cmd_today(args):
@@ -75,6 +88,7 @@ def cmd_dashboard(args):
     init_db(db)
     if not args.no_scan:
         scan_dir(_projects(args), db)
+        codex_scan_dir(_codex_dir(args), db)
     from token_dashboard.server import run
 
     host = os.environ.get("HOST", "127.0.0.1")
@@ -83,13 +97,14 @@ def cmd_dashboard(args):
     if not args.no_open:
         webbrowser.open(url)
     print(f"Token Dashboard listening on {url}")
-    run(host, port, db, _projects(args))
+    run(host, port, db, _projects(args), _codex_dir(args))
 
 
 def main():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--db", help="SQLite path (default ~/.claude/token-dashboard.db)")
-    common.add_argument("--projects-dir", help="JSONL root (default ~/.claude/projects)")
+    common.add_argument("--projects-dir", help="Claude JSONL root (default ~/.claude/projects)")
+    common.add_argument("--codex-dir", help="Codex sessions root (default ~/.codex/sessions)")
 
     p = argparse.ArgumentParser(prog="token-dashboard", description="Local Claude Code usage dashboard", parents=[common])
     sub = p.add_subparsers(dest="cmd", required=True)

@@ -46,6 +46,8 @@ export default async function (root) {
   const cacheCreate =
     (totals.cache_create_5m_tokens || 0) +
     (totals.cache_create_1h_tokens || 0);
+  const totalCtx = (totals.input_tokens || 0) + (totals.cache_read_tokens || 0) + cacheCreate;
+  const cacheRate = totalCtx > 0 ? totals.cache_read_tokens / totalCtx : null;
 
   const kpi = (label, compactVal, fullVal, cls = '') => `
     <div class="card kpi ${cls}">
@@ -66,13 +68,14 @@ export default async function (root) {
       ${rangeTabs}
     </div>
 
-    <div class="row cols-7">
+    <div class="row cols-8">
       ${kpi('Sessions',     fmt.int(totals.sessions),       fmt.int(totals.sessions))}
       ${kpi('Turns',        fmt.int(totals.turns),          fmt.int(totals.turns))}
       ${kpi('Input',        fmt.compact(totals.input_tokens),       fmt.int(totals.input_tokens) + ' tokens')}
       ${kpi('Output',       fmt.compact(totals.output_tokens),      fmt.int(totals.output_tokens) + ' tokens')}
       ${kpi('Cache read',   fmt.compact(totals.cache_read_tokens),  fmt.int(totals.cache_read_tokens) + ' tokens')}
       ${kpi('Cache create', fmt.compact(cacheCreate),               fmt.int(cacheCreate) + ' tokens')}
+      ${kpi('Cache rate',   fmt.pct(cacheRate),                     'cache_read / total_context', 'good')}
       <div class="card kpi cost">
         <div class="label">Est. cost</div>
         <div class="value" title="${fmt.usd(totals.cost_usd)}">${fmt.usd(totals.cost_usd)}</div>
@@ -120,14 +123,18 @@ export default async function (root) {
       <div class="card">
         <h3 style="display:flex;align-items:center"><span>Recent sessions</span><span class="spacer"></span><a href="#/sessions" style="font-weight:400;font-size:12px">all →</a></h3>
         <table>
-          <thead><tr><th>started</th><th>project</th><th class="num">tokens</th></tr></thead>
+          <thead><tr><th>started</th><th>project</th><th class="num">tokens</th><th class="num">cache rate</th></tr></thead>
           <tbody>
-            ${sessions.map(s => `
-              <tr>
+            ${sessions.map(s => {
+              const total = (s.tokens || 0) + (s.cache_read_tokens || 0) + (s.cache_create_tokens || 0);
+              const rate = total > 0 ? s.cache_read_tokens / total : null;
+              return `<tr>
                 <td class="mono">${fmt.ts(s.started)}</td>
                 <td><a href="#/sessions/${encodeURIComponent(s.session_id)}">${fmt.htmlSafe(s.project_name || s.project_slug)}</a></td>
                 <td class="num">${fmt.compact(s.tokens)}</td>
-              </tr>`).join('') || '<tr><td colspan="3" class="muted">no sessions in this range</td></tr>'}
+                <td class="num good">${fmt.pct(rate)}</td>
+              </tr>`;
+            }).join('') || '<tr><td colspan="4" class="muted">no sessions in this range</td></tr>'}
           </tbody>
         </table>
       </div>
